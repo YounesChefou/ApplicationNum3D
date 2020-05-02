@@ -36,3 +36,8 @@ if USB0:
     grbl_serial = open_com("/dev/ttyUSB0");
 elif USB1:
     grbl_serial = open_com("/dev/ttyUSB1");
+
+if st.button("Lancer les moteurs")
+
+
+if st.button("")
