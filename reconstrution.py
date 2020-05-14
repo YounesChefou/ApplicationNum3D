@@ -6,6 +6,10 @@ import tkinter
 matplotlib.use('TkAgg')
 
 donnees = np.load("arr_0.npy")
+tAcq = 86.5e-9
+vOnde = 340
+tSec = tAcq/donnees.shape[1]
+
 # print(donnees)
 # print(donnees.shape)
 
@@ -20,12 +24,12 @@ donnees = np.load("arr_0.npy")
 #Mais pour cela, nous allons devoir rajouter une dimension
 
 #Nous allons d'abord commencer par essayer de tracer un cercle
-cercleX = np.empty(360, dtype = float)
-cercleY = np.empty(360, dtype = float)
-
-for i in range(0, 360):
-    cercleX[i] = 5*np.cos(2*np.pi*(i/360))
-    cercleY[i] = 5*np.sin(2*np.pi*(i/360))
+# cercleX = np.empty(360, dtype = float)
+# cercleY = np.empty(360, dtype = float)
+#
+# for i in range(0, 360):
+#     cercleX[i] = 5*np.cos(2*np.pi*(i/360))
+#     cercleY[i] = 5*np.sin(2*np.pi*(i/360))
 
 
 # plt.clf()
@@ -36,7 +40,7 @@ for i in range(0, 360):
 #chaque point du cercle, représenter les points correspondants sur notre nouvelle dimension
 
 #Nous allons sauvegarder les données dans un fichier txt pour les observer dans leur entiereté
-np.savetxt('donnees.txt', donnees)
+# np.savetxt('donnees.txt', donnees)
 
 #Ce qu'il faut faire, c'est de d'abord recupérér les distances captées par le transducteur
 #En partant du principe que la distance est le temps entre deux echos divisé par 340 m/s
@@ -48,10 +52,10 @@ np.savetxt('donnees.txt', donnees)
 #Pour recuperer les echos, il faut pouvoir les identifier, nous allons donc commencer par afficher la
 #premiere ligne afin d'avoir une meilleure vision de l'acquisition
 
-xvals = range(donnees.shape[1]);
-plt.clf()
-plt.plot(xvals,donnees[0])
-plt.show()
+# xvals = range(donnees.shape[1]);
+# plt.clf()
+# plt.plot(xvals,donnees[50])
+# plt.show()
 
 #Voir fichier Acquisition_1.png
 #Toutes les acquisitions ont le même profil, un pic correspondant à l'envoi de l'onde puis
@@ -59,10 +63,78 @@ plt.show()
 
 #Proposition : "Normaliser" l'acquisition en determinant le seuil où un pic correspond à une reflexion
 #de l'onde, toutes les valeurs inférieures seront mises à zéro et celles depassant le seul à 1
-#A tester ce soir
 
-# figure3D = np.empty((357, 357, 1384), dtype = float)
-#
-# for x in figure3D:
-#     for y in x:
-#         for z in y:
+#Afin de trouver les pics, on va commencer par trouver le maximum à partir de 300
+#On va chercher ce maximum pour toutes les acquisitions pour ensuite trouver un seuil moyen
+
+# maximums = np.zeros(donnees.shape[0])
+# maximum = 0;
+# for j in range(0, donnees.shape[0]):
+#     for i in range(500, donnees.shape[1]):
+#         if(donnees[j][i] > maximum):
+#             maximum = donnees[j][i]
+#     maximums[j] = maximum
+#     maximum = 0
+
+# xvals = range(donnees.shape[0])
+# plt.clf()
+# plt.plot(xvals, maximums)
+# plt.show()
+
+#Sur l'image Maximums.png, on peut voir que les maximums ne sont pas constants pour toutes
+#les acquisitions avec des max à presque 2 et certains à 0.14, les pics à 2 sont dus au fait que
+#pour certaines acquisitions, l'ultrason était envoyé plus tard que les autres
+#Il nous faut detecter le premier ultrason et ensuite, detecter les pics étant supérieurs à
+#0.14
+
+#On va faire un tableau de dimensions 360x5
+#Donc dans chaque acquisition, on va recuperer l'indice correspondant au pic de l'ultrason et le
+#mettre au début de notre tableau, les 4 autres elements seront les pics correspondant aux reflexions des ondes
+#On commence donc à chercher les 4 autres pics 100 indices après notre pic d'ultrason
+
+indPics = np.empty((360, 5))
+picUltra = False
+seuilPicUltra = 1.45
+seuilPicReflex = 0.14
+
+for i in range(0, donnees.shape[0]):
+    for j in range(0, donnees.shape[1]):
+        if(picUltra == False and donnees[i][j] > seuilPicUltra):
+                indPics[i][0] = j
+                picUltra = True
+        elif(picUltra == True and j > (indPics[i][0] + 100) and donnees[i][j] > seuilPicReflex):
+                np.concatenate(indPics[i],j)
+    picUltra = False
+
+np.savetxt('indPics.txt', indPics) #On verifie si les données semblent cohérentes
+
+#On peut maintenant calculer les divers distances
+#Le principe est simple, recuperer la difference entre l'indice d'un pic correspondant à la reflexion
+#et l'indice de l'emission de l'ultrason, on la convertit en secondes et on la multiplie par la vitesse
+#du son pour obtenir la distance
+
+distances = np.empty((360, 4))
+for i in range(0, indPics.shape[0]):
+    for j in range(1, len(indPics[i])):
+        diff = indPics[i][j] - indPics[i][0]
+        t = diff*tSec
+        distances[i][j-1] = t*vOnde
+
+np.savetxt('distances.txt', distances)
+
+#Maintenant que nous avons calculer les distances, nous pouvons commencer la représentation
+#de la figure, nous allons donc parcourir le cercle et à chaque point, placer les points
+
+figureX = np.empty((360, 4))
+figureY = np.empty((360, 4))
+
+for i in range(0, distances.shape[0]):
+    for j in range(0, len(distances[i])):
+        figureX[i][j] = distances[i][j]*np.cos(2*np.pi*(i/360))
+        figureY[i][j] = distances[i][j]*np.sin(2*np.pi*(i/360))
+
+#Nous pouvons maintenant representer cette figure sur un plot
+
+plt.clf()
+plt.plot(figureX, figureY)
+plt.show()
