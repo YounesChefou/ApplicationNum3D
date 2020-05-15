@@ -92,19 +92,23 @@ tSec = tAcq/donnees.shape[1]
 #mettre au début de notre tableau, les 4 autres elements seront les pics correspondant aux reflexions des ondes
 #On commence donc à chercher les 4 autres pics 100 indices après notre pic d'ultrason
 
-indPics = np.empty((360, 5))
+indPics = np.empty((360, 5), dtype = int)
 picUltra = False
 seuilPicUltra = 1.45
 seuilPicReflex = 0.14
-
+k = 1
 for i in range(0, donnees.shape[0]):
     for j in range(0, donnees.shape[1]):
         if(picUltra == False and donnees[i][j] > seuilPicUltra):
                 indPics[i][0] = j
                 picUltra = True
-        elif(picUltra == True and j > (indPics[i][0] + 100) and donnees[i][j] > seuilPicReflex):
-                np.concatenate(indPics[i],j)
+
+        elif(picUltra == True and j > (indPics[i][0] + 100) and donnees[i][j] > seuilPicReflex and k < 5):
+                indPics[i][k] = j
+                k += 1
+
     picUltra = False
+    k = 1
 
 np.savetxt('indPics.txt', indPics) #On verifie si les données semblent cohérentes
 
@@ -133,8 +137,11 @@ for i in range(0, distances.shape[0]):
         figureX[i][j] = distances[i][j]*np.cos(2*np.pi*(i/360))
         figureY[i][j] = distances[i][j]*np.sin(2*np.pi*(i/360))
 
+
 #Nous pouvons maintenant representer cette figure sur un plot
 
 plt.clf()
-plt.plot(figureX, figureY)
+plt.scatter(figureX[0], figureY[0])
 plt.show()
+
+#TODO: En verifiant le fichier indPics, on peut voir des données étranges (nbres negatifs par ex)
