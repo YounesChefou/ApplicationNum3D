@@ -1,0 +1,10 @@
+Trouver pourquoi on a des zeros dans le fichier distances
+
+
+Interface streamlit:
+- Grand titre
+- entree permettant de selectionner un fichier
+- une fois le fichier selectionné, debut du traitement du modele
+- Dataframe affichant les distances trouvées
+- Affichage d'une acquisition (possibilté de toutes les afficher ?)
+- affichage de la figure
