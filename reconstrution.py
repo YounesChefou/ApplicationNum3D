@@ -29,6 +29,8 @@ if(nomFichier):
     vOnde = 340
     tSec = tAcq/donnees.shape[1]
 
+    
+
     # print(donnees)
     # print(donnees.shape)
 
@@ -221,8 +223,8 @@ if(nomFichier):
     figureY2 = np.zeros(distances2.shape[0])
 
     for i in range(0, distances2.shape[0]):
-            figureX2[i] = distances2[i]*np.cos(2*np.pi*(i/360))
-            figureY2[i] = distances2[i]*np.sin(2*np.pi*(i/360))
+            figureX2[i] = (5e-2-(distances2[i]*10))*np.cos(2*np.pi*(i/360))
+            figureY2[i] = (5e-2-(distances2[i]*10))*np.sin(2*np.pi*(i/360))
 
 
     #Nous pouvons maintenant representer cette figure sur un plot
